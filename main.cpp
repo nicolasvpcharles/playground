@@ -23,9 +23,9 @@ int maxNumberOfEnemies = 15;
 
 // variables sliding enemies
 
-int numberOfSlidingEnemies = 0;
+int numberOfSlidingEnemies = 1;
 int maxNumberOfSlidingEnemies = 10;
-
+bool SlidingEnemiesCanSpawn = false;
 // ============================================================
 // CALCUL DE DIRECTION
 // ============================================================
@@ -815,6 +815,36 @@ public:
     }
 };
 
+//=============================================================
+// COIN
+//=============================================================
+
+//
+// i have to put other things inside
+//
+class coin
+{
+public:
+    long x;
+    long y;
+    long r;
+    Color color;
+
+    coin(long coinX, long coinY, long coinR, Color coinColor)
+    {
+        x = coinX;
+        y = coinY;
+        r = coinR;
+        color = coinColor;
+    };
+
+    void update()
+    {
+
+        DrawCircle(x, y, r, color);
+    };
+};
+
 // ============================================================
 // PROJECTION POUR COLLISION SAT
 // ============================================================
@@ -1086,7 +1116,7 @@ int main()
         screenX / 2,
         125,
         20,
-        RED);
+        GRAY);
 
     // ========================================================
     // MURS
@@ -1220,9 +1250,10 @@ int main()
             // Même taille : 25 x 25
             // Même couleur : RED
 
-            if (numberOfEnemies == maxNumberOfEnemies)
+            if (SlidingEnemiesCanSpawn == true)
             {
-                if (numberOfEnemies % 2 == 0)
+
+                if (numberOfEnemies >= maxNumberOfEnemies)
                 {
 
                     // on spawn a la base 1 ennemis sur le y du joueur
@@ -1234,26 +1265,37 @@ int main()
                         25,
                         RED);
 
-                    i = 0;
-                    while (i < numberOfSlidingEnemies)
+                    int a = 0;
+                    while (a < numberOfSlidingEnemies)
                     {
 
                         SlidingEnemies.emplace_back(
-                            screenX + 25,
+                            screenX + std::rand() % 100,
+
                             rand() % screenY +
                                 Player.height / 2,
                             25,
                             25,
                             RED);
-                        i = i + 1;
+                        a = a + 1;
                     };
-                    if (numberOfSlidingEnemies != maxNumberOfSlidingEnemies)
+                    if (numberOfSlidingEnemies < maxNumberOfSlidingEnemies)
                     {
                         numberOfSlidingEnemies = numberOfSlidingEnemies + 1;
-                    };
-                };
-            }
+                        // apres il faut que je divise le nombre de enemys normal par 2
+                        if (numberOfEnemies > maxNumberOfEnemies / 2)
+                        {
 
+                            numberOfEnemies = numberOfEnemies - 1;
+                        };
+                    };
+                    SlidingEnemiesCanSpawn = false;
+                };
+            };
+            if (SlidingEnemiesCanSpawn == false)
+            {
+                SlidingEnemiesCanSpawn = true;
+            };
             lastEnemySpawn =
                 now;
         }
