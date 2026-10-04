@@ -16,6 +16,9 @@ int screenY = 0;
 // nombres de fps
 const int targetFps = 60;
 
+// variables du coin
+bool coinTaken = false;
+long coinScore = 0;
 // autres variables
 int numberOfEnemies = 1;
 long long score = 0;
@@ -838,7 +841,7 @@ public:
         color = coinColor;
     };
 
-    void update()
+    void draw()
     {
 
         DrawCircle(x, y, r, color);
@@ -1163,6 +1166,15 @@ int main()
     // Spinning objects
     std::vector<slidingEnemy> SlidingEnemies;
 
+    //=========================================================
+    // Autres objects
+    //=========================================================
+    coin Coin(
+        std::rand() % screenX,
+        std::rand() % screenY,
+        5,
+        YELLOW);
+
     // ========================================================
     // CHRONOMETRES
     // ========================================================
@@ -1193,6 +1205,20 @@ int main()
             screenY =
                 GetScreenHeight();
         }
+        //=====================================================
+        // COIN
+        //=====================================================
+
+        if (coinTaken == true)
+        {
+            // il faut refaire spawn le coin dcp
+            Coin.x = std::rand() % screenX;
+            Coin.y = std::rand() % screenY;
+
+            coinScore = coinScore + 1;
+            score = score + 10;
+            coinTaken = false;
+        };
 
         // ====================================================
         // TEMPS
@@ -1462,6 +1488,32 @@ int main()
             }
         }
 
+        //=============================================
+        // Colision jeueur piece
+        //=============================================
+        if (
+            Player.x <
+                Coin.x +
+                    Coin.r &&
+
+            Player.x +
+                    Player.width >
+                Coin.x -
+                    Coin.r &&
+
+            Player.y <
+                Coin.y +
+                    Coin.r &&
+
+            Player.y +
+                    Player.height >
+                Coin.y -
+                    Coin.r)
+        {
+
+            coinTaken = true;
+        };
+
         // ====================================================
         // COLLISION JOUEUR / ENNEMIS NORMAUX
         // ====================================================
@@ -1533,12 +1585,6 @@ int main()
         ClearBackground(BLACK);
 
         // ====================================================
-        // JOUEUR
-        // ====================================================
-
-        Player.draw();
-
-        // ====================================================
         // BALLES
         // ====================================================
 
@@ -1555,6 +1601,18 @@ int main()
         {
             Wall.draw();
         }
+
+        // ====================================================
+        // JOUEUR
+        // ====================================================
+
+        Player.draw();
+
+        //========================================================
+        // Piece
+        //========================================================
+
+        Coin.draw();
 
         // ====================================================
         // PARTICULES
@@ -1655,6 +1713,19 @@ int main()
             screenY - 40,
             25,
             GREEN);
+
+        //===================================
+        // Text coins
+        //==================================
+        std::string coinScoreStr = "Coins : " + std::to_string((long)coinScore);
+        DrawText(
+            coinScoreStr.c_str(),
+            screenX - 250,
+            20,
+            25,
+            WHITE
+
+        );
 
         EndDrawing();
 
