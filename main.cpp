@@ -9,6 +9,9 @@
 // ============================================================
 // TAILLE DE L'ECRAN
 // ============================================================
+// camera
+Camera2D camera = {0};
+float targetCameraSize = 0.9f;
 
 int screenX = 0;
 int screenY = 0;
@@ -19,6 +22,7 @@ const int targetFps = 60;
 // variables du coin
 bool coinTaken = false;
 long coinScore = 0;
+
 // autres variables
 int numberOfEnemies = 1;
 long long score = 0;
@@ -29,6 +33,17 @@ int maxNumberOfEnemies = 15;
 int numberOfSlidingEnemies = 1;
 int maxNumberOfSlidingEnemies = 10;
 bool SlidingEnemiesCanSpawn = false;
+
+// variables de couleurs
+// Fond
+Color backgroundCouleur = {75, 35, 18, 255};
+
+// Sol et murs
+Color solCouleur = {35, 20, 12, 255};
+Color murCouleur = {35, 20, 12, 255};
+
+Color ballBlueColor{63, 89, 191, 255};
+Color ballRedColor{196, 33, 63, 255};
 // ============================================================
 // CALCUL DE DIRECTION
 // ============================================================
@@ -426,7 +441,9 @@ public:
     void drawWeapon()
     {
         Vector2 mouse =
-            GetMousePosition();
+            GetScreenToWorld2D(
+                GetMousePosition(),
+                camera);
 
         float centerX =
             x + width / 2;
@@ -474,7 +491,9 @@ public:
     Vector2 getWeaponEnd()
     {
         Vector2 mouse =
-            GetMousePosition();
+            GetScreenToWorld2D(
+                GetMousePosition(),
+                camera);
 
         float centerX =
             x + width / 2;
@@ -614,6 +633,16 @@ public:
             y,
             radius,
             color);
+        DrawCircle(
+            x,
+            y,
+            radius / 1.5,
+            ballRedColor);
+        DrawCircle(
+            x,
+            y,
+            radius / 3,
+            YELLOW);
     }
 };
 
@@ -626,7 +655,9 @@ void shootParticles(
     player &Player)
 {
     Vector2 mouse =
-        GetMousePosition();
+        GetScreenToWorld2D(
+            GetMousePosition(),
+            camera);
 
     float centerX =
         Player.x +
@@ -822,9 +853,8 @@ public:
 // COIN
 //=============================================================
 
-//
 // i have to put other things inside
-//
+
 class coin
 {
 public:
@@ -843,7 +873,6 @@ public:
 
     void draw()
     {
-
         DrawCircle(x, y, r, color);
     };
 };
@@ -1119,7 +1148,7 @@ int main()
         screenX / 2,
         125,
         20,
-        GRAY);
+        ballBlueColor);
 
     // ========================================================
     // MURS
@@ -1169,6 +1198,7 @@ int main()
     //=========================================================
     // Autres objects
     //=========================================================
+
     coin Coin(
         std::rand() % screenX,
         std::rand() % screenY,
@@ -1185,12 +1215,38 @@ int main()
     auto lastBulletRecharge =
         std::chrono::steady_clock::now();
 
+    //================================================================
+    // Camera
+    //================================================================
+
+    camera.target.x += (Player.x + Player.width / 2.0f - camera.target.x) * 0.005f;
+    camera.target.y += (Player.y + Player.height / 2.0f - camera.target.y) * 0.005f;
+
+    camera.offset = {
+        screenX / 2.0f,
+        screenY / 2.0f};
+
+    camera.rotation = 0.0f;
+    camera.zoom = 0.1f;
+
     // ========================================================
     // BOUCLE PRINCIPALE
     // ========================================================
 
     while (!WindowShouldClose())
     {
+        camera.target = {
+            Player.x + Player.width / 2.0f,
+            Player.y + Player.height / 2.0f};
+
+        if (camera.zoom <= targetCameraSize)
+        {
+            camera.zoom = camera.zoom + 0.015f;
+        };
+        if (camera.zoom > targetCameraSize)
+        {
+            camera.zoom = targetCameraSize;
+        };
         // ====================================================
         // F11
         // ====================================================
@@ -1205,6 +1261,7 @@ int main()
             screenY =
                 GetScreenHeight();
         }
+
         //=====================================================
         // COIN
         //=====================================================
@@ -1248,10 +1305,12 @@ int main()
                 1 +
                 std::rand() %
                     numberOfEnemies;
+
             if (numberOfEnemies <= maxNumberOfEnemies)
             {
                 numberOfEnemies = numberOfEnemies + 1;
             }
+
             while (i != n)
             {
                 enemies.emplace_back(
@@ -1278,10 +1337,8 @@ int main()
 
             if (SlidingEnemiesCanSpawn == true)
             {
-
                 if (numberOfEnemies >= maxNumberOfEnemies)
                 {
-
                     // on spawn a la base 1 ennemis sur le y du joueur
                     SlidingEnemies.emplace_back(
                         screenX + 25,
@@ -1292,9 +1349,9 @@ int main()
                         RED);
 
                     int a = 0;
+
                     while (a < numberOfSlidingEnemies)
                     {
-
                         SlidingEnemies.emplace_back(
                             screenX + std::rand() % 100,
 
@@ -1303,25 +1360,32 @@ int main()
                             25,
                             25,
                             RED);
+
                         a = a + 1;
                     };
+
                     if (numberOfSlidingEnemies < maxNumberOfSlidingEnemies)
                     {
-                        numberOfSlidingEnemies = numberOfSlidingEnemies + 1;
+                        numberOfSlidingEnemies =
+                            numberOfSlidingEnemies + 1;
+
                         // apres il faut que je divise le nombre de enemys normal par 2
                         if (numberOfEnemies > maxNumberOfEnemies / 2)
                         {
-
-                            numberOfEnemies = numberOfEnemies - 1;
+                            numberOfEnemies =
+                                numberOfEnemies - 1;
                         };
                     };
+
                     SlidingEnemiesCanSpawn = false;
                 };
             };
+
             if (SlidingEnemiesCanSpawn == false)
             {
                 SlidingEnemiesCanSpawn = true;
             };
+
             lastEnemySpawn =
                 now;
         }
@@ -1371,7 +1435,9 @@ int main()
 
                 // Repousse le joueur
                 Vector2 mouse =
-                    GetMousePosition();
+                    GetScreenToWorld2D(
+                        GetMousePosition(),
+                        camera);
 
                 Player.pushBack(
                     mouse.x,
@@ -1491,6 +1557,7 @@ int main()
         //=============================================
         // Colision jeueur piece
         //=============================================
+
         if (
             Player.x <
                 Coin.x +
@@ -1510,7 +1577,6 @@ int main()
                 Coin.y -
                     Coin.r)
         {
-
             coinTaken = true;
         };
 
@@ -1582,7 +1648,13 @@ int main()
 
         BeginDrawing();
 
-        ClearBackground(BLACK);
+        ClearBackground(backgroundCouleur);
+
+        //=====================================================
+        // CAMERA
+        //=====================================================
+
+        BeginMode2D(camera);
 
         // ====================================================
         // BALLES
@@ -1642,6 +1714,53 @@ int main()
         {
             enemy.draw();
         }
+
+        //=========================================================
+        // Draw the walls
+        //=========================================================
+        // ============================================================
+        // MURS DE LA BOITE
+        // ============================================================
+        float wallThickness = 500000.0f;
+        float wallSize = 1000000.0f;
+
+        // TOP
+        DrawRectangle(
+            -wallSize,
+            -wallThickness,
+            screenX + wallSize * 2,
+            wallThickness,
+            solCouleur);
+
+        // GAUCHE
+        DrawRectangle(
+            -wallThickness,
+            -wallSize,
+            wallThickness,
+            screenY + wallSize * 2,
+            solCouleur);
+
+        // DROITE
+        DrawRectangle(
+            screenX,
+            -wallSize,
+            wallThickness,
+            screenY + wallSize * 2,
+            solCouleur);
+
+        // BAS
+        DrawRectangle(
+            -wallSize,
+            screenY,
+            screenX + wallSize * 2,
+            wallThickness,
+            solCouleur);
+        //=====================================================
+        //-----------------------------------------------------
+        // TEXTE
+        //-----------------------------------------------------
+        //=====================================================
+        EndMode2D();
 
         // ====================================================
         // SCORE
@@ -1717,15 +1836,18 @@ int main()
         //===================================
         // Text coins
         //==================================
-        std::string coinScoreStr = "Coins : " + std::to_string((long)coinScore);
+
+        std::string coinScoreStr =
+            "Coins : " +
+            std::to_string(
+                (long)coinScore);
+
         DrawText(
             coinScoreStr.c_str(),
             screenX - 250,
             20,
             25,
-            WHITE
-
-        );
+            WHITE);
 
         EndDrawing();
 
