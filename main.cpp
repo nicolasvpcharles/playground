@@ -27,23 +27,36 @@ long coinScore = 0;
 int numberOfEnemies = 1;
 long long score = 0;
 int maxNumberOfEnemies = 15;
-
+bool normalEnemiesCanSpawn = true;
 // variables sliding enemies
 
 int numberOfSlidingEnemies = 1;
-int maxNumberOfSlidingEnemies = 10;
+int maxNumberOfSlidingEnemies = 5;
 bool SlidingEnemiesCanSpawn = false;
+
+// variables folowing enemies
+
+bool folowingEnemiesCanSpawn = false;
+int numberOfFolowingEnemies = 0;
+int maxNumberOfFolowingEnemies = 3;
 
 // variables de couleurs
 // Fond
-Color backgroundCouleur = {75, 35, 18, 255};
+Color backgroundCouleur = {35, 65, 85, 255};
 
 // Sol et murs
-Color solCouleur = {35, 20, 12, 255};
-Color murCouleur = {35, 20, 12, 255};
+Color solCouleur = {48, 91, 108, 255};
+Color murCouleur = {74, 135, 145, 255};
 
 Color ballBlueColor{63, 89, 191, 255};
 Color ballRedColor{196, 33, 63, 255};
+
+// Couleur enemis
+
+Color enemyColor = {245, 103, 195, 255};
+Color slidingEnemyColor{245, 103, 146, 255};
+
+float vague = 0.0f;
 // ============================================================
 // CALCUL DE DIRECTION
 // ============================================================
@@ -877,6 +890,117 @@ public:
     };
 };
 
+//=======================================================
+// Folowing enemy
+//=======================================================
+class folowingEnemy
+{
+public:
+    // Position
+    float x;
+    float y;
+
+    // Taille
+    float h;
+    float w;
+
+    // Vitesse
+    float speed;
+
+    // Rotation
+    float rotation;
+
+    // Couleur
+    Color color;
+
+    // Collision
+    bool colider;
+
+    // Constructeur
+    folowingEnemy(float enemyX, float enemyY, float enemyH, float enemyW, Color enemyColor)
+    {
+        x = enemyX;
+        y = enemyY;
+
+        h = enemyH;
+        w = enemyW;
+
+        speed = 2.0f;
+
+        rotation = 0.0f;
+
+        color = enemyColor;
+
+        colider = true;
+    }
+
+    // Déplacement vers le joueur
+    void update(float playerX, float playerY)
+    {
+        float dx = playerX - x;
+        float dy = playerY - y;
+
+        float distance = sqrt(dx * dx + dy * dy);
+
+        if (distance > 0)
+        {
+            // Direction vers le joueur
+            dx /= distance;
+            dy /= distance;
+
+            // Déplacement
+            x += dx * speed;
+            y += dy * speed;
+
+            // Rotation pour regarder le joueur
+            rotation = atan2(dy, dx);
+        }
+    }
+
+    // Dessin
+    void draw()
+    {
+        // Points de la flèche AVANT rotation
+        Vector2 pointe = {
+            40,
+            0};
+
+        Vector2 haut = {
+            -30,
+            -30};
+
+        Vector2 bas = {
+            -30,
+            30};
+
+        // Calcul du cosinus et sinus
+        float cosAngle = cos(rotation);
+        float sinAngle = sin(rotation);
+
+        // Rotation + position pour la pointe
+        Vector2 finalPointe = {
+            x + pointe.x * cosAngle - pointe.y * sinAngle,
+            y + pointe.x * sinAngle + pointe.y * cosAngle};
+
+        // Rotation + position pour le haut
+        Vector2 finalHaut = {
+            x + haut.x * cosAngle - haut.y * sinAngle,
+            y + haut.x * sinAngle + haut.y * cosAngle};
+
+        // Rotation + position pour le bas
+        Vector2 finalBas = {
+            x + bas.x * cosAngle - bas.y * sinAngle,
+            y + bas.x * sinAngle + bas.y * cosAngle};
+
+        // Dessiner la flèche
+        DrawTriangle(
+            finalPointe,
+            finalHaut,
+            finalBas,
+            color);
+    }
+};
+
 // ============================================================
 // PROJECTION POUR COLLISION SAT
 // ============================================================
@@ -1195,6 +1319,10 @@ int main()
     // Spinning objects
     std::vector<slidingEnemy> SlidingEnemies;
 
+    // folowing enemy
+
+    std::vector<folowingEnemy> FolowingEnemy;
+
     //=========================================================
     // Autres objects
     //=========================================================
@@ -1310,24 +1438,25 @@ int main()
             {
                 numberOfEnemies = numberOfEnemies + 1;
             }
-
-            while (i != n)
+            if (normalEnemiesCanSpawn == true)
             {
-                enemies.emplace_back(
-                    std::rand() % screenY,
-                    screenX +
-                        std::rand() %
-                            (screenX / 20),
-                    5,
-                    PURPLE);
+                while (i != n)
+                {
+                    enemies.emplace_back(
+                        std::rand() % screenY,
+                        screenX +
+                            std::rand() %
+                                (screenX / 20),
+                        5,
+                        enemyColor);
 
-                score =
-                    score +
-                    numberOfEnemies;
+                    score =
+                        score +
+                        numberOfEnemies;
 
-                i++;
-            }
-
+                    i++;
+                }
+            };
             // =================================================
             // SPINNING OBJECT
             // =================================================
@@ -1346,7 +1475,7 @@ int main()
                             Player.height / 2,
                         25,
                         25,
-                        RED);
+                        slidingEnemyColor);
 
                     int a = 0;
 
@@ -1355,11 +1484,11 @@ int main()
                         SlidingEnemies.emplace_back(
                             screenX + std::rand() % 100,
 
-                            rand() % screenY +
+                            rand() % screenY + 100 +
                                 Player.height / 2,
                             25,
                             25,
-                            RED);
+                            slidingEnemyColor);
 
                         a = a + 1;
                     };
@@ -1378,6 +1507,7 @@ int main()
                     };
 
                     SlidingEnemiesCanSpawn = false;
+                    vague = vague + 1;
                 };
             };
 
@@ -1385,7 +1515,28 @@ int main()
             {
                 SlidingEnemiesCanSpawn = true;
             };
+            // ajouter des elemnents vague comme des enemis plus intelegents etc
 
+            if (vague >= 5)
+            {
+
+                normalEnemiesCanSpawn = false;
+                // il faut donc ici spawn les enemys qui te suivent
+                int iFolowingEnemies = 0;
+                while (iFolowingEnemies < maxNumberOfFolowingEnemies)
+                {
+                    FolowingEnemy.emplace_back(screenX + std::rand() % 100,
+
+                                               rand() % screenY + 100 +
+                                                   Player.height / 2,
+                                               10,
+                                               10,
+                                               slidingEnemyColor);
+                    iFolowingEnemies = iFolowingEnemies + 1;
+                };
+
+                vague = 0;
+            };
             lastEnemySpawn =
                 now;
         }
@@ -1499,6 +1650,14 @@ int main()
             SlidingEnemies)
         {
             enemy.update(dt);
+        }
+
+        //======================================================
+        // UPDATE FOLLOWING ENEMY
+        //=======================================================
+        for (folowingEnemy &folowingE : FolowingEnemy)
+        {
+            folowingE.update(Player.x, Player.y);
         }
 
         // ====================================================
@@ -1641,6 +1800,30 @@ int main()
                 Player.velocityX = -250;
             }
         }
+        //=====================================================
+        // COLISION JOUEUR FOLOWING ENEMY
+        //=====================================================
+        for (folowingEnemy &folowingE : FolowingEnemy)
+        {
+            if (Player.x < folowingE.x + 10 &&
+                Player.x + Player.width > folowingE.x - 10 &&
+                Player.y < folowingE.y + 10 &&
+                Player.y + Player.height > folowingE.y - 10)
+            {
+                std::cout << "COLLISION !" << std::endl;
+            }
+        }
+
+        //====================================================
+        // Colision balle folowing enemy
+        //====================================================
+        //
+        // under construction
+        //
+        //
+        //
+        //
+        //
 
         // ====================================================
         // DESSIN
@@ -1715,14 +1898,23 @@ int main()
             enemy.draw();
         }
 
+        //====================================================
+        // Folowing enemy
+        //====================================================
+
+        for (folowingEnemy &folowingE : FolowingEnemy)
+        {
+            folowingE.draw();
+        }
+
         //=========================================================
         // Draw the walls
         //=========================================================
         // ============================================================
         // MURS DE LA BOITE
         // ============================================================
-        float wallThickness = 500000.0f;
-        float wallSize = 1000000.0f;
+        float wallThickness = 50000.0f;
+        float wallSize = 100000.0f;
 
         // TOP
         DrawRectangle(
