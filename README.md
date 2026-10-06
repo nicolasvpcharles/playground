@@ -1,418 +1,269 @@
-# Playground
-
-## proof of concept
-
-
-
----
-Petit simulateur de physique 2D développé en C++ avec Raylib.
-Le projet permet de simuler différents objets soumis à une physique simple : gravité, vitesse, collisions et rebonds.
-Le code est actuellement regroupé dans `main.cpp`.
----
-Prérequis
-Pour compiler le projet, il faut :
+Physics Simulator
+Un petit jeu / sandbox 2D développé en C++ avec raylib.
+Le projet mélange plusieurs systèmes : physique simple, gravité, collisions, caméra, ennemis, vagues, tir, particules, score et pièces.
+> Le projet est encore en développement. Certaines mécaniques sont volontairement simples et certaines fonctionnalités sont encore en cours d'amélioration.
+🎮 Aperçu
+Le joueur contrôle un personnage dans une arène 2D.
+Il peut :
+se déplacer grâce à la physique ;
+viser avec la souris ;
+tirer avec le clic gauche ;
+être repoussé par le tir ;
+subir des dégâts en touchant certains ennemis ;
+récupérer des pièces ;
+gagner du score ;
+interagir avec des murs et le sol.
+Le jeu utilise une caméra qui suit le joueur.
+🛠️ Technologies
 C++
-g++
-Raylib
-MSYS2 sous Windows
-VS Code (optionnel)
-Le projet utilise actuellement les bibliothèques Raylib présentes dans :
-```text
-C:/msys64/ucrt64/include
-C:/msys64/ucrt64/lib
-```
-Raylib
-Raylib doit être installé dans l'environnement UCRT64 de MSYS2.
-Le compilateur doit pouvoir trouver :
-```text
-raylib.h
-```
-ainsi que la bibliothèque Raylib.
----
-Récupérer le projet
-Pour cloner le repository :
-```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
-```
-Puis entrer dans le dossier :
-```bash
-cd REPOSITORY
-```
-Pour faire un fork, utilisez le bouton Fork de GitHub puis clonez votre fork.
----
-Compilation
-Sous Windows avec MSYS2 UCRT64 :
+raylib
+`std::vector`
+`std::chrono`
+`std::cmath`
+📦 Prérequis
+Un compilateur C++ compatible
+raylib 6.0 ou une version compatible
+VS Code ou un autre IDE
+Sous Windows, un environnement MSYS2 / MinGW peut être utilisé.
+Le projet a été développé sous Windows avec MinGW.
+🚀 Compilation
+Avec MinGW et raylib correctement installés :
 ```bash
 g++ main.cpp -o main.exe -IC:/msys64/ucrt64/include -LC:/msys64/ucrt64/lib -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
-Cela produit :
+Les chemins peuvent être différents selon l'installation de raylib.
+🕹️ Contrôles
+Action	Contrôle
+Viser	Souris
+Tirer	Clic gauche
+Plein écran	F11
+La position de la souris est convertie en coordonnées du monde grâce à `GetScreenToWorld2D()`, ce qui permet de viser correctement lorsque la caméra bouge.
+⚙️ Fonctionnement général
+Le programme suit une boucle de jeu classique :
 ```text
-main.exe
+Initialisation
+      ↓
+Création des objets
+      ↓
+Boucle principale
+      ↓
+Gestion des entrées
+      ↓
+Calcul du delta time
+      ↓
+Mise à jour de la physique
+      ↓
+Détection des collisions
+      ↓
+Mise à jour des ennemis
+      ↓
+Mise à jour des particules
+      ↓
+Dessin
+      ↓
+Image suivante
 ```
-Le programme peut ensuite être lancé avec :
-```bash
-./main.exe
-```
-ou :
-```bash
-main.exe
-```
----
-Structure générale
-Le projet est actuellement organisé autour de plusieurs classes et fonctions :
-```text
-main.cpp
-│
-├── calculateAngle()
-│
-├── Particle
-│
-├── wall
-│
-├── player
-│
-├── Ball
-│
-├── shootParticles()
-│
-└── main()
-```
-Chaque partie possède un rôle différent dans le fonctionnement du simulateur.
----
-Fonctionnement général
-Le programme fonctionne avec une game loop.
-Elle se trouve dans :
-```cpp
-while (!WindowShouldClose())
-```
-À chaque tour de boucle, le programme :
-récupère le temps écoulé ;
-récupère les entrées utilisateur ;
-met à jour les objets ;
-vérifie les collisions ;
-supprime les particules terminées ;
-dessine les objets à l'écran.
-La structure générale est donc :
-```text
-Game Loop
-    │
-    ├── GetFrameTime()
-    │
-    ├── Inputs
-    │
-    ├── Update
-    │
-    ├── Collisions
-    │
-    └── Draw
-```
----
-Delta Time
-Le programme utilise :
-```cpp
-float dt = GetFrameTime();
-```
-`dt` représente le temps écoulé depuis la dernière image.
-Il est utilisé pour les déplacements et la physique :
-```cpp
-x += velocityX * dt;
-y += velocityY * dt;
-```
-Cela permet de calculer les déplacements en fonction du temps.
----
-`calculateAngle()`
-La fonction `calculateAngle()` calcule une direction entre deux points.
-Elle calcule `dx` et `dy`, puis la distance entre les deux points :
-```cpp
-float distance = std::sqrt(dx * dx + dy * dy);
-```
-Le vecteur est ensuite normalisé :
-```cpp
-dx /= distance;
-dy /= distance;
-```
-La fonction retourne donc un vecteur représentant une direction.
-Elle est notamment utilisée pour calculer la direction de propulsion du joueur.
----
-Classe `player`
-La classe `player` représente le joueur.
+Le programme utilise `GetFrameTime()` pour récupérer le temps écoulé entre deux images.
+🧑‍🚀 Joueur
+Le joueur est représenté par la classe `player`.
 Elle contient notamment :
-```cpp
-float x;
-float y;
-
-float height;
-float width;
-
-float velocityX;
-float velocityY;
-
-float gravity;
-float restitution;
-
-Color color;
-```
-La position est représentée par `x` et `y`.
-La vitesse est représentée par `velocityX` et `velocityY`.
----
-Mise à jour du joueur
-La méthode :
-```cpp
-Player.update(dt);
-```
-met à jour la physique du joueur.
+sa position ;
+sa taille ;
+sa vitesse horizontale et verticale ;
+la gravité ;
+sa vie ;
+ses munitions ;
+son coefficient de restitution ;
+sa couleur.
 La gravité est appliquée avec :
 ```cpp
 velocityY += gravity * dt;
 ```
-Puis la position est modifiée :
+Puis la position est mise à jour avec :
 ```cpp
 x += velocityX * dt;
 y += velocityY * dt;
 ```
-Le joueur est également empêché de sortir de la fenêtre.
----
-Propulsion du joueur
-Lorsque le bouton gauche de la souris est pressé :
+💥 Recul
+Lorsque le joueur tire, une force est appliquée dans la direction du tir.
+Le programme calcule une direction normalisée afin que la force garde une intensité constante quelle que soit la distance entre le joueur et la souris.
+🔫 Arme et tir
+L'arme du joueur est orientée vers la souris.
+Le programme utilise `atan2()` pour calculer l'angle :
 ```cpp
-IsMouseButtonPressed(MOUSE_BUTTON_LEFT)
+atan2(dy, dx)
 ```
-le programme appelle :
+L'arme est ensuite dessinée avec `DrawRectanglePro()`.
+Le clic gauche déclenche le tir si le joueur possède des munitions.
+Le tir consomme une munition et crée également des particules orange.
+Les munitions sont rechargées automatiquement avec le temps jusqu'à `maxBulets`.
+✨ Particules
+Les particules sont gérées par la classe `Particle`.
+Chaque particule possède :
+une position ;
+une vitesse ;
+une durée de vie ;
+un rayon ;
+une couleur.
+La durée de vie diminue avec `dt`.
+Lorsqu'elle atteint `0`, la particule est supprimée.
+Son opacité diminue également progressivement pour créer un effet de disparition.
+🧱 Murs
+Les murs sont représentés par la classe `wall`.
+Chaque mur possède :
+une position ;
+une largeur ;
+une hauteur ;
+une couleur ;
+un état de collision.
+Le joueur utilise `checkWallCollision()` pour détecter les collisions avec les murs.
+La position précédente du joueur est utilisée pour déterminer si la collision vient du dessus, du dessous, de la gauche ou de la droite.
+👾 Ennemis
+Le projet possède plusieurs types d'ennemis.
+Ennemi normal
+La classe `enemyA` représente un ennemi basique qui se déplace horizontalement vers la gauche.
+Une collision avec le joueur inflige des dégâts.
+🌀 Spinning Enemy
+La classe `slidingEnemy` représente un ennemi qui se déplace horizontalement tout en tournant.
+Il possède notamment :
+une position ;
+une taille ;
+une vitesse ;
+une rotation ;
+une couleur.
+Les collisions utilisent une détection de type SAT (Separating Axis Theorem) via `playerVsSlidingEnemy()`.
+Une collision avec cet ennemi inflige des dégâts au joueur.
+🎯 Following Enemy
+La classe `folowingEnemy` représente un ennemi qui suit le joueur.
+Il calcule la direction entre sa position et celle du joueur, normalise cette direction puis avance vers lui.
+Sa rotation est également calculée avec `atan2()` afin qu'il soit orienté vers sa direction.
+> Le nom `folowingEnemy` est conservé car c'est le nom utilisé dans le code.
+🌊 Vagues d'ennemis
+Les ennemis sont générés progressivement avec un délai entre les apparitions.
+Le programme possède différentes limites :
 ```cpp
-Player.pushBack(mouse.x, mouse.y);
+maxNumberOfEnemies
+maxNumberOfSlidingEnemies
+maxNumberOfFolowingEnemies
 ```
-La direction entre le joueur et la souris est calculée.
-Une force est ensuite appliquée :
+Après certaines vagues, de nouveaux types d'ennemis peuvent apparaître.
+🪙 Pièce
+La classe `coin` représente une pièce récupérable.
+Lorsque le joueur entre en collision avec elle, son état change et le score associé aux pièces est mis à jour.
+❤️ Vie
+Le joueur possède une variable :
 ```cpp
-float pushForce = 500.0f;
+health
 ```
-La vitesse du joueur est modifiée en fonction de cette direction.
----
-Arme
-L'arme du joueur est dessinée dans :
+Elle commence à `100`.
+Les collisions avec les ennemis peuvent réduire cette valeur.
+Lorsque la vie atteint `0`, la partie se termine.
+🏆 Score
+Le score global est stocké dans :
 ```cpp
-drawWeapon()
+long long score;
 ```
-La position de la souris est récupérée avec :
+Il est affiché pendant la partie et peut être augmenté par différentes actions.
+📷 Caméra
+Le projet utilise `Camera2D`.
+La caméra suit le joueur et possède un système de zoom.
+La conversion :
 ```cpp
-Vector2 mouse = GetMousePosition();
+GetScreenToWorld2D()
 ```
-Le programme utilise ensuite `atan2()` pour calculer l'angle entre le joueur et la souris.
-L'arme est dessinée avec :
+permet de transformer les coordonnées de la souris à l'écran en coordonnées du monde.
+C'est notamment nécessaire pour viser correctement avec l'arme.
+⏱️ Delta Time
+Le programme utilise :
 ```cpp
-DrawRectanglePro()
+float dt = GetFrameTime();
 ```
-Elle pointe donc vers la souris.
----
-Collisions
-Les collisions entre le joueur et les murs utilisent des rectangles AABB (Axis-Aligned Bounding Box).
-Le programme calcule les limites du joueur :
-```cpp
-float playerLeft = x;
-float playerRight = x + width;
-
-float playerTop = y;
-float playerBottom = y + height;
-```
-Puis celles du mur.
-Une collision est détectée lorsque les deux rectangles se chevauchent.
-Le programme utilise également `previousX` et `previousY` pour déterminer de quel côté le joueur est arrivé sur le mur.
-Cela permet de gérer les collisions par :
-le dessus ;
-le dessous ;
-la gauche ;
-la droite.
----
-Classe `wall`
-La classe `wall` représente les murs présents dans le monde.
-Un mur possède une position, une taille et une couleur.
+`dt` représente le temps écoulé depuis la frame précédente.
+Il permet de rendre les déplacements indépendants du nombre de FPS.
 Exemple :
 ```cpp
-walls.emplace_back(
-    100,
-    100,
-    30,
-    300,
-    ORANGE);
+position += velocity * dt;
 ```
-Les murs sont stockés dans :
+🧮 Mathématiques utilisées
+Le projet utilise notamment :
+Distance
 ```cpp
-std::vector<wall> walls;
+sqrt(dx * dx + dy * dy)
 ```
----
-Classe `Ball`
-La classe `Ball` représente une balle physique.
-Elle possède notamment :
+Normalisation
 ```cpp
-float x;
-float y;
-
-float radius;
-
-float gravity;
-float velocityY;
-
-float restitution;
-
-Color color;
+dx /= distance;
+dy /= distance;
 ```
-La balle est affectée par la gravité :
+Angle
 ```cpp
-velocityY += gravity * dt;
+atan2(dy, dx)
 ```
-Puis elle se déplace :
-```cpp
-y += velocityY * dt;
-```
----
-Rebond
-Lorsque la balle touche le bas de l'écran, sa vitesse est inversée :
-```cpp
-velocityY = -velocityY * restitution;
-```
-La variable `restitution` contrôle la quantité de vitesse conservée lors du rebond.
----
-Classe `Particle`
-La classe `Particle` représente une particule.
-Elle possède notamment :
-```cpp
-float x;
-float y;
-
-float velocityX;
-float velocityY;
-
-float lifetime;
-float maxLifetime;
-
-float radius;
-
-Color color;
-```
-Les particules sont utilisées pour créer un effet lors de la propulsion du joueur.
----
-Création des particules
-Les particules sont créées dans :
-```cpp
-shootParticles()
-```
-La fonction crée plusieurs particules et leur donne une vitesse avec une petite variation aléatoire.
-Les particules apparaissent au niveau de l'extrémité de l'arme.
----
-Durée de vie des particules
-Chaque particule possède une durée de vie.
-À chaque frame :
-```cpp
-lifetime -= dt;
-```
-Lorsqu'une particule arrive à :
-```cpp
-lifetime <= 0
-```
-elle est supprimée du `std::vector`.
----
-Rendu graphique
-Le rendu est effectué entre :
-```cpp
-BeginDrawing();
-```
-et :
-```cpp
-EndDrawing();
-```
-Le fond est nettoyé avec :
-```cpp
-ClearBackground(BLACK);
-```
-Puis les différents objets sont dessinés :
-```cpp
-Player.draw();
-
-for (Ball &ball : balls)
-{
-    ball.draw();
-}
-
-for (wall &Wall : walls)
-{
-    Wall.draw();
-}
-
-for (Particle &particle : particles)
-{
-    particle.draw();
-}
-```
-Chaque classe possède sa propre méthode `draw()`.
----
-Ajouter un objet
-Le projet utilise `std::vector` pour stocker plusieurs objets.
-Pour ajouter une balle :
-```cpp
-std::vector<Ball> balls;
-
-balls.emplace_back(
-    500,
-    125,
-    20,
-    RED);
-```
-Pour ajouter un mur :
-```cpp
-std::vector<wall> walls;
-
-walls.emplace_back(
-    400,
-    600,
-    200,
-    30,
-    GREEN);
-```
----
-Modifier les paramètres
-Les paramètres physiques sont directement présents dans les classes.
-Par exemple, la gravité du joueur :
-```cpp
-gravity = 500.0f;
-```
-La force de propulsion :
-```cpp
-float pushForce = 500.0f;
-```
-La restitution :
-```cpp
-restitution = 0.8f;
-```
-Ces valeurs peuvent être modifiées pour expérimenter avec le comportement du simulateur.
----
-Modifier le projet
-Après avoir cloné ou fork le projet, les modifications peuvent être faites directement dans :
+Collisions
+Plusieurs méthodes sont utilisées selon les objets :
+AABB pour certaines collisions rectangulaires ;
+distance pour certaines collisions ;
+SAT pour le joueur et le `slidingEnemy`.
+🗂️ Structure générale
 ```text
-main.cpp
+Variables globales
+│
+├── Caméra
+├── Score
+├── Ennemis
+├── Couleurs
+│
+├── calculateAngle()
+│
+├── Particle
+├── wall
+├── player
+├── Ball
+├── enemyA
+├── slidingEnemy
+├── coin
+├── folowingEnemy
+│
+├── Fonctions de collision
+├── Fonctions de particules
+│
+└── main()
+    ├── Initialisation
+    ├── Création des objets
+    ├── Boucle principale
+    │   ├── Entrées
+    │   ├── Spawn
+    │   ├── Physique
+    │   ├── Collisions
+    │   ├── Ennemis
+    │   └── Dessin
+    └── Fermeture
 ```
-Après une modification, recompilez le programme :
-```bash
-g++ main.cpp -o main.exe -IC:/msys64/ucrt64/include -LC:/msys64/ucrt64/lib -lraylib -lopengl32 -lgdi32 -lwinmm
-```
-Puis lancez :
-```bash
-./main.exe
-```
----
-Git
-Après avoir fork le projet, les modifications peuvent être enregistrées avec Git :
-```bash
-git add .
-```
-Puis :
-```bash
-git commit -m "Modification du simulateur"
-```
-Et enfin :
-```bash
-git push
-```
-Le fork GitHub sera alors mis à jour.
----
-Licence
-Aucune licence spécifique n'est actuellement définie pour ce projet.
+## 📚 Objectif du projet
+Ce projet est avant tout un projet personnel permettant d'expérimenter la programmation C++ et les bases d'un moteur de jeu 2D.
+Les principaux concepts travaillés sont :
+programmation orientée objet ;
+classes et objets ;
+`std::vector` ;
+boucle de jeu ;
+delta time ;
+vecteurs et normalisation ;
+collisions ;
+physique simple ;
+gestion des entrées ;
+caméra 2D ;
+particules ;
+gestion d'ennemis ;
+score et états de jeu.
+## 🚧 État du projet
+Le projet est encore en développement.
+Certaines parties sont expérimentales et peuvent être améliorées :
+collisions ;
+équilibrage des ennemis ;
+physique ;
+système de combat ;
+animations ;
+organisation du code ;
+séparation du moteur et du gameplay.
+Le projet n'a pas pour objectif de se présenter comme un moteur physique complet. Il sert surtout de terrain d'expérimentation pour apprendre et construire progressivement un petit moteur de jeu en C++.
+fié pour expérimenter et apprendre.
